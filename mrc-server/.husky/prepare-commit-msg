@@ -1,0 +1,28 @@
+#!/usr/bin/env sh
+
+# 현재 브랜치 이름 가져오기
+BRANCH_NAME=$(git symbolic-ref --short HEAD)
+BRANCH_NAME="${BRANCH_NAME##*/}"
+
+# master 및 develop 브랜치에서는 작업을 스킵
+if [ "$BRANCH_NAME" = "master" ] || [ "$BRANCH_NAME" = "develop" ] || [ "$BRANCH_NAME" = "BE" ] || [ "$BRANCH_NAME" = "FE" ] || [ "$BRANCH_NAME" = "EM" ]; then
+  exit 0
+fi
+
+# 브랜치 이름을 "/" 기준으로 분할하여 배열로 저장
+IFS='/' read -ra BRANCH_PARTS <<< "$BRANCH_NAME"
+LAST_PART="${BRANCH_PARTS[-1]}"  # 브랜치명의 마지막 부분 가져오기
+
+# 정규 표현식을 사용하여 브랜치의 마지막 부분이 "S10P31A305-숫자" 형식을 따르는지 확인
+if ! echo "$LAST_PART" | grep -qE '^S10P31A305-[0-9]+$'; then
+  echo "작업형태/팀/작업명/S10P31A305-숫자 형식의 브랜치명을 사용해주세요."
+  exit 1
+fi
+
+# JIRA 이슈 번호 추출
+JIRA_ID="$LAST_PART"  
+
+# 커밋 메시지에 JIRA 이슈 번호가 없는 경우에만 추가
+if ! grep -q "$JIRA_ID" "$1"; then
+  sed -i.bak -e "\$s/$/ $JIRA_ID/" "$1"
+fi

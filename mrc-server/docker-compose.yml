@@ -1,0 +1,59 @@
+version: "3"
+services:
+
+  spring:
+    container_name: spring
+    build:
+      context: backend/mrc
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - mysql
+      - redis
+    ports:
+      - "8080:8080"
+    networks:
+      - db-connection
+      - redis-connection
+
+  mysql:
+    container_name: mysql
+    image: mysql:8.0
+    restart: always
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_ROOT_HOST=${MYSQL_ROOT_HOST}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - TZ=Asia/Seoul
+    volumes:
+      - ${MYSQL_DATA_PATH}:/var/lib/mysql
+      - ${MYSQL_CONFIG_PATH}:/etc/mysql/conf.d
+#      - ${MYSQL_INIT_PATH}:/docker-entrypoint-initdb.d
+    networks:
+      - db-connection
+    ports:
+      - ${MYSQL_PORT}
+
+  redis:
+    container_name: redis
+    image: redis
+    command:
+      - --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - ${REDIS_DATA_PATH}:/data
+      - ${REDIS_CONFIG}:/usr/local/etc/redis/redis.conf
+    networks:
+      - redis-connection
+
+networks:
+
+  db-connection:
+    driver: bridge
+
+  redis-connection:
+    driver: bridge
